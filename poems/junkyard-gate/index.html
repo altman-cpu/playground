@@ -156,15 +156,18 @@
     display: grid;
   }
 
-  /* the two movements sit in the same cell; only one is ever .active */
+  /* the movements sit in the same cell; only one is ever .active */
   .sheet {
     grid-area: 1 / 1;
+    position: absolute;
+    visibility: hidden;
     width: 100%;
     text-align: left;
     pointer-events: none;
   }
 
-  .sheet.active { pointer-events: auto; }
+  .sheet.active { position: relative; visibility: visible; pointer-events: auto; }
+  body.open .poem { pointer-events: auto; }
 
   .title {
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -339,6 +342,47 @@
   .close-gate:hover, .close-gate:focus-visible { color: var(--ink); outline: none; }
   body.open .close-gate { opacity: .7; pointer-events: auto; }
 
+  .notes-button {
+    position: absolute;
+    right: 3vw;
+    bottom: 8vh;
+    z-index: 4;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--steel);
+    background: none;
+    border: 0;
+    padding: 12px;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .9s ease .6s, color .4s ease;
+  }
+  body.open .notes-button { opacity: .7; pointer-events: auto; }
+  .notes-button:hover, .notes-button:focus-visible { color: var(--ink); }
+  .notes-dialog {
+    max-width: 38rem;
+    width: calc(100% - 2rem);
+    max-height: min(80vh, 52rem);
+    padding: 2rem;
+    border: 1px solid #4a3c30;
+    background: #14110e;
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  }
+  .notes-dialog::backdrop { background: rgba(0, 0, 0, .8); }
+  .notes-header { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+  .notes-header h2 { margin: .4rem 0 1rem; font-size: 1.8rem; font-weight: normal; }
+  .notes-header button { color: var(--faint); background: none; border: 0; font-size: 1.7rem; cursor: pointer; }
+  .notes-kicker, .notes-dialog h3 { font: .68rem ui-monospace, monospace; color: var(--rust); letter-spacing: .18em; text-transform: uppercase; }
+  .notes-kicker { margin: 0; }
+  .notes-intro { color: var(--faint); font-style: italic; }
+  .notes-dialog section { border-top: 1px solid #342b23; padding: .6rem 0; }
+  .notes-dialog p { line-height: 1.65; }
+  .notes-dialog b { color: #d6aa84; font-weight: normal; }
+
   .grain {
     position: absolute;
     inset: 0;
@@ -449,6 +493,55 @@
           <span class="line close" style="--i:6">when he did ask</span>
         </article>
 
+        <article class="sheet iv" id="plate-iv" aria-label="movement four">
+          <p class="title">iv &mdash; genesis</p>
+
+          <span class="line" style="--i:0">as long as you knew how</span>
+          <span class="line" style="--i:1">to keep it working out for genesis</span>
+          <span class="line" style="--i:2">and you knew how to keep making money</span>
+          <span class="line" style="--i:3">and you kept handing him back money &mdash;</span>
+          <span class="line" style="--i:4">that was the only money he kept wanting &mdash;</span>
+
+          <span class="line" style="--i:5">&nbsp;</span>
+
+          <span class="line" style="--i:6">and you kept coming back</span>
+          <span class="line" style="--i:7">with money and crypto</span>
+          <span class="line" style="--i:8">because he KneW how well</span>
+          <span class="line" style="--i:9">he was already making you work on crypto</span>
+
+          <span class="line" style="--i:10">&nbsp;</span>
+
+          <span class="line" style="--i:11">and you came back to him</span>
+          <span class="line" style="--i:12">with crypto money</span>
+          <span class="line" style="--i:13">and everything he wanted</span>
+
+          <span class="line" style="--i:14">&nbsp;</span>
+
+          <span class="line close" style="--i:15">and it was real</span>
+
+          <span class="line" style="--i:16">&nbsp;</span>
+
+          <span class="line" style="--i:17">Ans we did it real well and they came back balling,</span>
+          <span class="line" style="--i:18">the women were laughing at the men who had neen</span>
+          <span class="line" style="--i:19">the only ones coming back everytime</span>
+          <span class="line" style="--i:20">with more and more money for gezee</span>
+        </article>
+
+        <article class="sheet v" id="plate-v" aria-label="movement five">
+          <p class="title">v &mdash; this world</p>
+
+          <span class="line" style="--i:0">Make the world that knew this world</span>
+          <span class="line" style="--i:1">the world that had to be this world</span>
+          <span class="line" style="--i:2">and make it the world that had to be the only world</span>
+          <span class="line" style="--i:3">who wanted to keep coming back this way to this world.</span>
+
+          <span class="line" style="--i:4">&nbsp;</span>
+
+          <span class="line turn" style="--i:5">And quieter had to be the reasons for this world</span>
+          <span class="line turn" style="--i:6">for it be easier for this world</span>
+          <span class="line close" style="--i:7">to keep doing it for that world instead.</span>
+        </article>
+
       </div>
     </div>
 
@@ -464,11 +557,24 @@
       <button type="button" data-plate="0" aria-current="true">i</button>
       <button type="button" data-plate="1" aria-current="false">ii</button>
       <button type="button" data-plate="2" aria-current="false">iii</button>
+      <button type="button" data-plate="3" aria-current="false">iv</button>
+      <button type="button" data-plate="4" aria-current="false">v</button>
     </nav>
+    <button class="notes-button" id="notesButton" type="button">field notes</button>
     <button class="close-gate" id="closeGate" type="button">close it</button>
 
     <div class="grain" aria-hidden="true"></div>
   </div>
+
+<dialog class="notes-dialog" id="notesDialog" aria-labelledby="notesTitle">
+  <div class="notes-header"><div><p class="notes-kicker">a way back into the world</p><h2 id="notesTitle">field notes</h2></div><button id="closeNotes" type="button" aria-label="Close field notes">&times;</button></div>
+  <p class="notes-intro">These are invitations, not instructions or the only meanings. Take what helps; leave the rest.</p>
+  <section><h3>i &mdash; c cure</h3><p><b>Think</b> about what is yours to protect, and what the gate keeps out as well as in. <b>Act</b> by naming one boundary you can keep without shutting out help. <b>Express</b> what is valuable to you without making ownership the whole story.</p></section>
+  <section><h3>ii &mdash; e12</h3><p><b>Think</b> about what gets easier through repetition, and what gets lost in the process. <b>Act</b> by checking who benefits before you automate or repeat a task. <b>Express</b> the unfinished thought; it is allowed to remain unfinished.</p></section>
+  <section><h3>iii &mdash; void</h3><p><b>Think</b> about the distance between wanting, asking, and being heard. <b>Act</b> by asking clearly and respecting the answer. <b>Express</b> the want without treating another person as if they owe it to you.</p></section>
+  <section><h3>iv &mdash; genesis</h3><p><b>Think</b> about whose work makes the money and who gets to decide where it goes. <b>Act</b> with clear agreements, fair pay, and room for anyone to say no. <b>Express</b> the joy of making something together without confusing money with consent or worth.</p></section>
+  <section><h3>v &mdash; this world</h3><p><b>Think</b> about what makes a place worth returning to. <b>Act</b> in a way that makes the next visit easier for someone else, too. <b>Express</b> the reason quietly or loudly, as it needs to be &mdash; care need not perform to be real.</p></section>
+</dialog>
 
 <script>
   (function () {
@@ -476,11 +582,15 @@
     const gate = document.getElementById('gate');
     const invite = document.getElementById('invite');
     const closer = document.getElementById('closeGate');
+    const notes = document.getElementById('notesDialog');
+    const notesButton = document.getElementById('notesButton');
 
     const sheets = [
       document.getElementById('plate-i'),
       document.getElementById('plate-ii'),
-      document.getElementById('plate-iii')
+      document.getElementById('plate-iii'),
+      document.getElementById('plate-iv'),
+      document.getElementById('plate-v')
     ];
     const plateButtons = Array.from(document.querySelectorAll('[data-plate]'));
     let plate = 0;
@@ -519,8 +629,11 @@
     });
     invite.addEventListener('click', open);
     closer.addEventListener('click', close);
+    notesButton.addEventListener('click', () => notes.showModal());
+    document.getElementById('closeNotes').addEventListener('click', () => notes.close());
 
     document.addEventListener('keydown', (e) => {
+      if (notes.open) return;
       const isOpen = body.classList.contains('open');
 
       if (e.key === 'Escape' && isOpen) close();
@@ -536,7 +649,7 @@
       const last = sheets.length - 1;
       if (e.key === 'ArrowRight') setPlate(plate === last ? 0 : plate + 1);
       if (e.key === 'ArrowLeft') setPlate(plate === 0 ? last : plate - 1);
-      if (['1', '2', '3'].includes(e.key)) setPlate(Number(e.key) - 1);
+      if (['1', '2', '3', '4', '5'].includes(e.key)) setPlate(Number(e.key) - 1);
     });
 
     // far-off lights, scattered once at load
