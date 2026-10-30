@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>cure — a junkyard with a gate</title>
+<style>
+  :root {
+    --ink: #e8e2d6;
+    --rust: #b4622f;
+    --night: #0a0908;
+    --steel: #6d665c;
+    --faint: #918a7d;
+    --ease: cubic-bezier(.16,.84,.24,1);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--night);
+    color: var(--ink);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  }
+
+  .scene {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  /* ---------- the world outside the gate ---------- */
+
+  .world {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(120% 80% at 50% 108%, #2a1a12 0%, #150f0c 42%, #0a0908 72%),
+      radial-gradient(60% 40% at 50% 100%, rgba(180, 98, 47, .22), transparent 70%);
+    opacity: .85;
+  }
+
+  /* horizon glow sitting low and far away */
+  .world::after {
+    content: "";
+    position: absolute;
+    left: -20%;
+    right: -20%;
+    bottom: -14vh;
+    height: 42vh;
+    background: radial-gradient(60% 100% at 50% 100%, rgba(214, 132, 74, .28), transparent 72%);
+    filter: blur(28px);
+    animation: breathe 14s ease-in-out infinite;
+  }
+
+  @keyframes breathe {
+    0%, 100% { opacity: .55; transform: translateY(0) scale(1); }
+    50%      { opacity: .9;  transform: translateY(-1.2vh) scale(1.04); }
+  }
+
+  /* far-off lights in the world: the only ones who know what they own */
+  .lights { position: absolute; inset: 0; }
+  .lights i {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: #d9a56d;
+    opacity: .35;
+    animation: flicker 6s ease-in-out infinite;
+  }
+
+  @keyframes flicker {
+    0%, 100% { opacity: .12; }
+    50%      { opacity: .5; }
+  }
+
+  /* ---------- the gate ---------- */
+
+  .gate {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    z-index: 3;
+    /* the gate is the thing you look through, so it swallows the click */
+    cursor: pointer;
+  }
+
+  .panel {
+    position: relative;
+    background:
+      linear-gradient(180deg, #17140f 0%, #0e0c0a 55%, #131009 100%);
+    transition: transform 2.1s var(--ease), filter 1.6s var(--ease);
+    will-change: transform;
+  }
+
+  /* the bars */
+  .panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0 46px,
+      rgba(122, 110, 94, .30) 46px 48px,
+      rgba(0, 0, 0, .55) 48px 56px,
+      transparent 56px 102px
+    );
+    mask-image: linear-gradient(180deg, #000 0%, #000 78%, rgba(0,0,0,.35) 100%);
+  }
+
+  /* the frame / hinge edge */
+  .panel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 90px rgba(0, 0, 0, .9);
+  }
+
+  .panel.left  { border-right: 1px solid rgba(140, 126, 106, .22); }
+  .panel.right { border-left: 1px solid rgba(140, 126, 106, .22); }
+
+  /* a lift of rust along the seam */
+  .panel.left::after  { box-shadow: inset 0 0 90px rgba(0,0,0,.9), inset -18px 0 40px -20px rgba(180, 98, 47, .28); }
+  .panel.right::after { box-shadow: inset 0 0 90px rgba(0,0,0,.9), inset 18px 0 40px -20px rgba(180, 98, 47, .28); }
+
+  body.open .panel.left  { transform: translateX(-88vw); filter: brightness(.55); }
+  body.open .panel.right { transform: translateX(88vw);  filter: brightness(.55); }
+
+  /* ---------- what is behind the gate ---------- */
+
+  .poem {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    padding: 8vh 8vw;
+    pointer-events: none;
+    overflow-y: auto;
+    place-items: safe center;
+  }
+
+  .stage {
+    position: relative;
+    width: 100%;
+    max-width: 34rem;
+    display: grid;
+  }
+
+  /* the two movements sit in the same cell; only one is ever .active */
+  .sheet {
+    grid-area: 1 / 1;
+    width: 100%;
+    text-align: left;
+    pointer-events: none;
+  }
+
+  .sheet.active { pointer-events: auto; }
+
+  .title {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: clamp(11px, 1.4vw, 13px);
+    letter-spacing: .42em;
+    text-transform: uppercase;
+    color: var(--rust);
+    margin: 0 0 2.4rem;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 1.4s var(--ease), transform 1.4s var(--ease);
+  }
+
+  .line {
+    display: block;
+    font-size: clamp(1.05rem, 2.35vw, 1.6rem);
+    line-height: 1.62;
+    color: var(--ink);
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(6px);
+    transition:
+      opacity 1.1s var(--ease),
+      transform 1.1s var(--ease),
+      filter 1.1s var(--ease);
+    transition-delay: 0s;
+  }
+
+  .sheet.active .line {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+    transition-delay: calc(var(--i) * 110ms + 380ms);
+  }
+
+  .line.turn { color: var(--faint); font-style: italic; }
+  .line.close { color: var(--ink); }
+
+  /* machine register: the same words, set like a label on a part */
+  .line.mono {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: clamp(.72rem, 1.15vw, .86rem);
+    letter-spacing: .16em;
+    line-height: 1.9;
+    color: var(--rust);
+  }
+
+  /* the dictation stops mid-clause */
+  .line.cut::after { content: " \2014"; color: var(--steel); }
+
+  .sheet.active .title { opacity: .9; transform: none; transition-delay: 260ms; }
+
+  /* pasted debris, quoted not fetched */
+  .debris {
+    display: block;
+    margin: 2.4rem 0 0;
+    padding-top: 1.1rem;
+    border-top: 1px solid rgba(109, 102, 92, .22);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: .58rem;
+    line-height: 1.75;
+    letter-spacing: .02em;
+    color: var(--steel);
+    word-break: break-all;
+    opacity: 0;
+    transition: opacity 1.4s var(--ease) .1s;
+  }
+
+  .sheet.active .debris { opacity: .6; transition-delay: 2.2s; }
+
+  .sheet.ii .line { line-height: 1.55; }
+  .sheet.ii .title { margin-bottom: 2rem; }
+
+  /* iii is short, so it is allowed to be loud */
+  .sheet.iii .line {
+    font-size: clamp(1.5rem, 4.4vw, 2.9rem);
+    line-height: 1.34;
+    letter-spacing: -.01em;
+  }
+  .sheet.iii .title { margin-bottom: 2.6rem; }
+  .sheet.iii .close { color: var(--rust); }
+
+  /* the stone the sheet sits on */
+  .sheet::before {
+    content: "";
+    position: absolute;
+    inset: -12vh -14vw;
+    background: radial-gradient(60% 60% at 50% 50%, rgba(8, 7, 6, .92) 0%, rgba(8, 7, 6, .68) 55%, transparent 78%);
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 1.8s var(--ease) .2s;
+  }
+  body.open .sheet.active::before { opacity: 1; }
+
+  /* ---------- controls ---------- */
+
+  .invite {
+    position: absolute;
+    left: 50%;
+    bottom: 7vh;
+    transform: translateX(-50%);
+    z-index: 4;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: .34em;
+    text-transform: uppercase;
+    color: var(--steel);
+    background: none;
+    border: 0;
+    padding: 14px 18px;
+    cursor: pointer;
+    transition: color .5s ease, opacity .8s ease;
+    animation: pulse 4.5s ease-in-out infinite;
+  }
+  .invite:hover, .invite:focus-visible { color: var(--ink); outline: none; }
+  body.open .invite { opacity: 0; pointer-events: none; animation: none; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: .35; }
+    50%      { opacity: .85; }
+  }
+
+  .plates {
+    position: absolute;
+    left: 3vw;
+    bottom: 3vh;
+    z-index: 4;
+    display: flex;
+    gap: 1.2rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .9s ease .6s;
+  }
+
+  .plates button {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--steel);
+    background: none;
+    border: 0;
+    padding: 12px 4px;
+    cursor: pointer;
+    transition: color .4s ease;
+  }
+
+  .plates button:hover,
+  .plates button:focus-visible { color: var(--ink); outline: none; }
+  .plates button[aria-current="true"] { color: var(--rust); }
+
+  body.open .plates { opacity: .8; pointer-events: auto; }
+
+  .close-gate {
+    position: absolute;
+    right: 3vw;
+    bottom: 3vh;
+    z-index: 4;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--steel);
+    background: none;
+    border: 0;
+    padding: 12px;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .9s ease .6s, color .4s ease;
+  }
+  .close-gate:hover, .close-gate:focus-visible { color: var(--ink); outline: none; }
+  body.open .close-gate { opacity: .7; pointer-events: auto; }
+
+  .grain {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    opacity: .16;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>");
+  }
+
+  /* once the gate is open, get out of the way so the poem can be read and selected */
+  body.open .gate { pointer-events: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; }
+    .panel, .line, .title, .sheet::before, .invite { transition-duration: .01ms !important; transition-delay: 0ms !important; }
+  }
+
+  @media (max-width: 560px) {
+    .poem { padding: 10vh 9vw 16vh; }
+    .line { font-size: 1.02rem; line-height: 1.7; }
+    .title { margin-bottom: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+  <div class="scene">
+    <div class="world">
+      <div class="lights" id="lights" aria-hidden="true"></div>
+    </div>
+
+    <!-- what the gate is holding back -->
+    <div class="poem">
+      <div class="stage">
+
+        <article class="sheet i" id="plate-i" aria-label="movement one">
+          <p class="title">c cure</p>
+
+          <span class="line" style="--i:0">if it had to be a junkyard</span>
+          <span class="line" style="--i:1">let it have a gate.</span>
+          <span class="line" style="--i:2">outside the gate had to be the world,</span>
+
+          <span class="line" style="--i:3">&nbsp;</span>
+
+          <span class="line" style="--i:4">he had to be the only one</span>
+          <span class="line" style="--i:5">who didn&rsquo;t know what he owned &mdash;</span>
+          <span class="line" style="--i:6">more than the world could keep,</span>
+
+          <span class="line" style="--i:7">&nbsp;</span>
+
+          <span class="line" style="--i:8">if he just wanted it that way</span>
+          <span class="line turn" style="--i:9">instead of his inner thoughts,</span>
+          <span class="line turn" style="--i:10">which weren&rsquo;t even in his best interest,</span>
+          <span class="line turn" style="--i:11">or whoever&rsquo;s best interest</span>
+          <span class="line turn" style="--i:12">his head had.</span>
+
+          <span class="line" style="--i:13">&nbsp;</span>
+
+          <span class="line close" style="--i:14">so much crystal to smoke</span>
+          <span class="line close" style="--i:15">so much not even fennel.</span>
+        </article>
+
+        <article class="sheet ii" id="plate-ii" aria-label="movement two">
+          <p class="title">ii &mdash; e12</p>
+
+          <span class="line" style="--i:0">everything was easier every time</span>
+          <span class="line" style="--i:1">and if it worked on it</span>
+          <span class="line" style="--i:2">that was easier every time.</span>
+
+          <span class="line" style="--i:3">&nbsp;</span>
+
+          <span class="line" style="--i:4">and if it had to know how well</span>
+          <span class="line" style="--i:5">it just knew wherever it else it delivered</span>
+          <span class="line" style="--i:6">it was always delivered</span>
+          <span class="line" style="--i:7">the way it had been congruent with</span>
+          <span class="line" style="--i:8">it needed to be done</span>
+
+          <span class="line turn" style="--i:9">for automation</span>
+
+          <span class="line" style="--i:10">&nbsp;</span>
+
+          <span class="line mono" style="--i:11">api_sms_earnings_E12</span>
+          <span class="line mono" style="--i:12">BULBS</span>
+
+          <span class="line" style="--i:13">&nbsp;</span>
+
+          <span class="line" style="--i:14">that number where this had to have been</span>
+          <span class="line cut" style="--i:15">had made all the</span>
+
+          <span class="debris">amazon.com/stores/GEZEE/page/A170F22C-0A09-46A6-9001-B5DF6A43865C
+?lp_asin=B0H8SFYJ9V&amp;ref_=cm_sw_r_mwn_ast_store_HKTMMQ6BYW94V536QC52
+&amp;store_ref=bl_ast_dp_brandlogo_sto</span>
+        </article>
+
+        <article class="sheet iii" id="plate-iii" aria-label="movement three">
+          <p class="title">iii &mdash; void</p>
+
+          <span class="line" style="--i:0">void source</span>
+          <span class="line" style="--i:1">a fuck ton of crys</span>
+          <span class="line" style="--i:2">real fucken good</span>
+
+          <span class="line" style="--i:3">&nbsp;</span>
+
+          <span class="line" style="--i:4">that wasn&rsquo;t even asked from anyone else</span>
+
+          <span class="line" style="--i:5">&nbsp;</span>
+
+          <span class="line close" style="--i:6">when he did ask</span>
+        </article>
+
+      </div>
+    </div>
+
+    <!-- the gate itself -->
+    <div class="gate" id="gate" role="presentation">
+      <div class="panel left"></div>
+      <div class="panel right"></div>
+    </div>
+
+    <button class="invite" id="invite" type="button">open the gate</button>
+
+    <nav class="plates" id="plates" aria-label="movements">
+      <button type="button" data-plate="0" aria-current="true">i</button>
+      <button type="button" data-plate="1" aria-current="false">ii</button>
+      <button type="button" data-plate="2" aria-current="false">iii</button>
+    </nav>
+    <button class="close-gate" id="closeGate" type="button">close it</button>
+
+    <div class="grain" aria-hidden="true"></div>
+  </div>
+
+<script>
+  (function () {
+    const body = document.body;
+    const gate = document.getElementById('gate');
+    const invite = document.getElementById('invite');
+    const closer = document.getElementById('closeGate');
+
+    const sheets = [
+      document.getElementById('plate-i'),
+      document.getElementById('plate-ii'),
+      document.getElementById('plate-iii')
+    ];
+    const plateButtons = Array.from(document.querySelectorAll('[data-plate]'));
+    let plate = 0;
+
+    function setPlate(n) {
+      plate = n;
+      sheets.forEach((sheet, i) => sheet.classList.toggle('active', i === n));
+      plateButtons.forEach((b, i) =>
+        b.setAttribute('aria-current', String(i === n))
+      );
+    }
+
+    function open() {
+      body.classList.add('open');
+      setPlate(plate);
+      // nothing animates until the gate has swung most of the way
+      // hand focus to the closing control so keyboard users can get back
+      window.setTimeout(() => closer.focus({ preventScroll: true }), 2400);
+    }
+
+    function close() {
+      body.classList.remove('open');
+      sheets.forEach((sheet) => sheet.classList.remove('active'));
+      invite.focus({ preventScroll: true });
+    }
+
+    plateButtons.forEach((b, i) => {
+      b.addEventListener('click', () => {
+        if (!body.classList.contains('open')) open();
+        setPlate(i);
+      });
+    });
+
+    gate.addEventListener('click', () => {
+      if (!body.classList.contains('open')) open();
+    });
+    invite.addEventListener('click', open);
+    closer.addEventListener('click', close);
+
+    document.addEventListener('keydown', (e) => {
+      const isOpen = body.classList.contains('open');
+
+      if (e.key === 'Escape' && isOpen) close();
+
+      if ((e.key === 'Enter' || e.key === ' ') && !isOpen) {
+        e.preventDefault();
+        open();
+      }
+
+      if (!isOpen) return;
+
+      // arrow keys cycle the plates, number keys jump straight to one
+      const last = sheets.length - 1;
+      if (e.key === 'ArrowRight') setPlate(plate === last ? 0 : plate + 1);
+      if (e.key === 'ArrowLeft') setPlate(plate === 0 ? last : plate - 1);
+      if (['1', '2', '3'].includes(e.key)) setPlate(Number(e.key) - 1);
+    });
+
+    // far-off lights, scattered once at load
+    const lights = document.getElementById('lights');
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < 46; i++) {
+      const dot = document.createElement('i');
+      const horizonBias = Math.pow(Math.random(), 1.7); // cluster low, near the ground
+      dot.style.left = (Math.random() * 100).toFixed(2) + '%';
+      dot.style.top = (72 + horizonBias * 26).toFixed(2) + '%';
+      dot.style.animationDelay = (Math.random() * 6).toFixed(2) + 's';
+      dot.style.animationDuration = (4 + Math.random() * 7).toFixed(2) + 's';
+      dot.style.opacity = (0.1 + Math.random() * 0.35).toFixed(2);
+      frag.appendChild(dot);
+    }
+    lights.appendChild(frag);
+  })();
+</script>
+</body>
+</html>
