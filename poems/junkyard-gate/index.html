@@ -238,6 +238,15 @@
   .sheet.ii .line { line-height: 1.55; }
   .sheet.ii .title { margin-bottom: 2rem; }
 
+  /* iii is short, so it is allowed to be loud */
+  .sheet.iii .line {
+    font-size: clamp(1.5rem, 4.4vw, 2.9rem);
+    line-height: 1.34;
+    letter-spacing: -.01em;
+  }
+  .sheet.iii .title { margin-bottom: 2.6rem; }
+  .sheet.iii .close { color: var(--rust); }
+
   /* the stone the sheet sits on */
   .sheet::before {
     content: "";
@@ -424,6 +433,22 @@
 &amp;store_ref=bl_ast_dp_brandlogo_sto</span>
         </article>
 
+        <article class="sheet iii" id="plate-iii" aria-label="movement three">
+          <p class="title">iii &mdash; void</p>
+
+          <span class="line" style="--i:0">void source</span>
+          <span class="line" style="--i:1">a fuck ton of crys</span>
+          <span class="line" style="--i:2">real fucken good</span>
+
+          <span class="line" style="--i:3">&nbsp;</span>
+
+          <span class="line" style="--i:4">that wasn&rsquo;t even asked from anyone else</span>
+
+          <span class="line" style="--i:5">&nbsp;</span>
+
+          <span class="line close" style="--i:6">when he did ask</span>
+        </article>
+
       </div>
     </div>
 
@@ -438,6 +463,7 @@
     <nav class="plates" id="plates" aria-label="movements">
       <button type="button" data-plate="0" aria-current="true">i</button>
       <button type="button" data-plate="1" aria-current="false">ii</button>
+      <button type="button" data-plate="2" aria-current="false">iii</button>
     </nav>
     <button class="close-gate" id="closeGate" type="button">close it</button>
 
@@ -453,7 +479,8 @@
 
     const sheets = [
       document.getElementById('plate-i'),
-      document.getElementById('plate-ii')
+      document.getElementById('plate-ii'),
+      document.getElementById('plate-iii')
     ];
     const plateButtons = Array.from(document.querySelectorAll('[data-plate]'));
     let plate = 0;
@@ -505,9 +532,11 @@
 
       if (!isOpen) return;
 
-      // arrow / number keys move between the two plates
-      if (e.key === 'ArrowRight' || e.key === '2') setPlate(1);
-      if (e.key === 'ArrowLeft' || e.key === '1') setPlate(0);
+      // arrow keys cycle the plates, number keys jump straight to one
+      const last = sheets.length - 1;
+      if (e.key === 'ArrowRight') setPlate(plate === last ? 0 : plate + 1);
+      if (e.key === 'ArrowLeft') setPlate(plate === 0 ? last : plate - 1);
+      if (['1', '2', '3'].includes(e.key)) setPlate(Number(e.key) - 1);
     });
 
     // far-off lights, scattered once at load
